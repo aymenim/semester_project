@@ -6,6 +6,8 @@ import cv2 as cv
 import numpy as np
 import random ,time , math
 import numpy
+
+strt = time.time()
 im = cv.imread('test_image_4.jpg')
 h , w = im.shape[:2]
 # print im.shape
@@ -22,13 +24,43 @@ gray = cv.Sobel(gray,cv.CV_8U,1,0,ksize=3,scale=1,delta=0, borderType=cv.BORDER_
 
 rt, gray  = cv.threshold(gray,0,255,cv.THRESH_OTSU + cv.THRESH_BINARY )
 
-element = cv.getStructuringElement(cv.MORPH_RECT,(21,3))
+element = cv.getStructuringElement(cv.MORPH_RECT,(26,3))
 
 gray = cv.morphologyEx(gray,cv.MORPH_CLOSE ,element)
 
 contours ,hierarchy = cv.findContours(gray.copy(),cv.RETR_EXTERNAL,cv.CHAIN_APPROX_NONE)
 
 def verify_sizes(mr):
+	x, y, w, h = cv.boundingRect(mr)
+	error = 0.1
+	#TODO aspect ratio of the plate for Ethiopia 
+	aspect = 3
+	#TODO min and max area for the plate with aspect * pixels
+	p_min = 15 * aspect * 15 
+	p_max = 125 * aspect * 125
+
+	#respect ratio
+	r_min = aspect - aspect*error
+	r_max = aspect + aspect*error
+
+	#contour area
+	area = w * h
+	try:
+		r = float(w) / float(h)
+	except:
+		return False
+	# print "r" , r
+	if (r<1):
+		return False
+		# r = 1/r
+
+	if (area < p_min or area > p_max) and (r < r_min or r > r_max):
+
+		return False
+	else:
+		return True
+
+def verify(mr):
 	# print mr
 	error = 0.1
 	#TODO aspect ratio of the plate for Ethiopia 
@@ -56,44 +88,64 @@ def verify_sizes(mr):
 	else:
 		return True
 
-
 rects = []
 for cont in contours:
-	mr = cv.minAreaRect(cont)
-	x, y, w1, h1 = cv.boundingRect(cont)
-	cv.rectangle(im, (x, y), (x+w1, y+h1), (0, 0, 255))
-	cv.putText(im, '%d'%mr[2], (x, y), cv.FONT_HERSHEY_PLAIN, 1.0, (200, 0, 0), thickness = 1)
+	# mr = cv.minAreaRect(cont)
+	# x, y, w1, h1 = cv.boundingRect(cont)
+	# cv.rectangle(im, (x, y), (x+w1, y+h1), (0, 0, 255))
+	# cv.putText(im, '%d'%mr[2], (x, y), cv.FONT_HERSHEY_PLAIN, 1.0, (200, 0, 0), thickness = 1)
 	# cv.rectangle(im, (int(mr[0][0]), int(mr[0][1])), (int(mr[0][0])+int(mr[1][0]), int(mr[0][1])+int(mr[1][1])), (0, 255, 0))
 
 	# box = cv.cv.BoxPoints(mr)
 	# box = np.int0(box)
 	# cv.drawContours(im,[box],0,(0,0,255),2)
-	if   verify_sizes(mr):
+	if   verify_sizes(cont):
 		# print mr
 		rects.append(cont)
 
 	# print mr
+i = 0
 for cont in rects:
 	mr = cv.minAreaRect(cont)
-	x, y, w, h = cv.boundingRect(cont)
-	cv.rectangle(im, (x, y), (x+w, y+h), (0, 255, 0))
-	cv.putText(im, '%d w: %f %f'%(mr[2],mr[0][0] , mr[0][1]), (x, y), cv.FONT_HERSHEY_PLAIN, 1.0, (200, 0, 0), thickness = 1)
+	x, y, w12, h12 = cv.boundingRect(cont)
+	cv.rectangle(im, (x, y), (x+w12, y+h12), (0, 255, 0))
+	# img_rotated = None
+	try:
+		r = mr[1][0] / mr[1][1]
+		angle = mr[2]
+	except:
+		continue
+	if r < 1:
+		angle = angle + 90
+	cv.putText(im, '%d'%mr[2], (x, y), cv.FONT_HERSHEY_PLAIN, 1.0, (200, 0, 0), thickness = 1)
+	# if int(mr[2]) == 0 :
 
-result = None
-# gray.copy(result)
-# cv.drawContours(result,rects,-1,(0,0,255))
+	rotmat = cv.getRotationMatrix2D(mr[0], angle ,1)
+	img_rotated = cv.warpAffine(im, rotmat ,(w,h))
+	# print type(img_rotated)
+	img_crop = cv.getRectSubPix(img_rotated , (w12,h12) ,mr[0])
+	result_resized = cv.resize ( img_crop ,(288,66),fx = 0 , fy = 0 , interpolation=cv.INTER_CUBIC)
+	cv.imshow('test1',img_rotated)
+	result_resized = cv.equalizeHist(cv.cvtColor(result_resized, cv.COLOR_BGR2GRAY))
+	
+	cv.imshow('test_sliced'+ str(i),result_resized)
+	i = int(i) + 1
 
-fixed_range = True
-connectivity = 4
-lo = 38
-hi = 39
-flags = connectivity #+  cv.FLOODFILL_FIXED_RANGE  +  
-flags |=cv.FLOODFILL_MASK_ONLY
-flags |= cv.FLOODFILL_FIXED_RANGE
-flags |= (255 << 8)
-print type(rects[0])
-mask = np.zeros((h+2, w+2), np.uint8)
-mask[:] = 0
+# result = None
+# # gray.copy(result)
+# cv.drawContours(im,rects,-1,(0,0,255))
+
+# fixed_range = True
+# connectivity = 4
+# lo = 38
+# hi = 39
+# flags = connectivity #+  cv.FLOODFILL_FIXED_RANGE  +  
+# flags |=cv.FLOODFILL_MASK_ONLY
+# flags |= cv.FLOODFILL_FIXED_RANGE
+# flags |= (255 << 8)
+# print type(rects[0])
+# mask = np.zeros((h+2, w+2), np.uint8)
+# mask[:] = 0
 # for rect in rects:
 # 	mr = cv.minAreaRect(rect)
 # 	# print "mr >>", mr
@@ -166,7 +218,7 @@ mask[:] = 0
 	
 
 # min_rect = cv.minAreaRect(interest_points)
-
+print "finished in" , str(time.time() - strt) , "sec"
 # cv.imshow('mask',mask)
 cv.imshow('test',im)
 0xFF & cv.waitKey()#(10)
