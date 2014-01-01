@@ -19,9 +19,9 @@ def deskew(img):
 	M = np.float32([[1, skew, -0.5*288*skew], [0, 1, 0]])
 	img = cv.warpAffine(img,M,(288, 66),flags=cv.WARP_INVERSE_MAP | cv.INTER_LINEAR)
 	return img
-def preprocess_hog(digits):
+def preprocess_hog(plates):
     samples = []
-    for img in digits:
+    for img in plates:
         gx = cv.Sobel(img, cv.CV_32F, 1, 0)
         gy = cv.Sobel(img, cv.CV_32F, 0, 1)
         mag, ang = cv.cartToPolar(gx, gy)

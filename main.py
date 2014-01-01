@@ -1,17 +1,15 @@
-'''
-@author Aymen Ibrahim
-'''
 
 import cv2 as cv
 import numpy as np
 import random ,time , math
 from svm_train import *
 
+debug = True
 
 model = SVM()
 model.load('plates_svm.dat')
 strt = time.time()
-im = cv.imread(r"C:\Users\Aymen Ibrahim\Documents\test\Image092.jpg")
+im = cv.imread(r"C:\Users\Aymen Ibrahim\Documents\semester_project\test_image\test_image_18.jpg")
 h , w = im.shape[:2]
 print im.shape
 def verify_sizes(mr):
@@ -49,20 +47,39 @@ def verify_sizes(mr):
 # 	ret , im = cap.read()
 
 gray = cv.cvtColor(im, cv.COLOR_BGR2GRAY)
+if debug:
+	cv.imshow('debug',gray)
+	0xFF & cv.waitKey()#(10)
 
 gray = cv.blur(gray,(7,7))
-gray = cv.Sobel(gray,cv.CV_8U,1,0,ksize=3,scale=1,delta=0, borderType=cv.BORDER_DEFAULT)
+if debug:
+	cv.imshow('debug',gray)
+	0xFF & cv.waitKey()#(10)
 
+gray = cv.Sobel(gray,cv.CV_8U,1,0,ksize=3,scale=1,delta=0, borderType=cv.BORDER_DEFAULT)
+if debug:
+	cv.imshow('debug',gray)
+	0xFF & cv.waitKey()#(10)
+ 
 rt, gray  = cv.threshold(gray,0,255,cv.THRESH_OTSU + cv.THRESH_BINARY )
+if debug:
+	cv.imshow('debug',gray)
+	0xFF & cv.waitKey()#(10)
 
 element = cv.getStructuringElement(cv.MORPH_RECT,(26,3))
 
 gray = cv.morphologyEx(gray,cv.MORPH_CLOSE ,element)
+if debug:
+	cv.imshow('debug',gray)
+	0xFF & cv.waitKey()#(10)
 
 
 contours ,hierarchy = cv.findContours(gray.copy(),cv.RETR_EXTERNAL,cv.CHAIN_APPROX_NONE)
 
-
+if debug:
+	cv.drawContours(im,contours,-1,(0,0,255))
+	cv.imshow('debug',im)
+	0xFF & cv.waitKey()#(10)
 
 
 rects = []
@@ -97,15 +114,15 @@ for cont in rects:
 
 
 	sample = preprocess_hog([result_resized])
-	digit = model.predict(sample)
+	plate_d = model.predict(sample)
 	cv.rectangle(im, (x, y), (x+w12, y+h12), (255, 0, 0))
 
-	if digit:
+	if plate_d:
 		cv.rectangle(im, (x, y), (x+w12, y+h12), (0, 255, 0))
 
 		cv.putText(im, '%d'%mr[2], (x, y), cv.FONT_HERSHEY_PLAIN, 1.0, (200, 0, 0), thickness = 1)
 		cv.imshow('test1',img_rotated)
-		print 'test_sliced'+ str(i) ,digit
+		print 'test_sliced'+ str(i) ,plate_d
 		cv.imshow('test_sliced'+ str(i),result_resized)
 	# cv.imwrite('test_sliced'+ str(i)+'.jpg',result_resized)
 	i = int(i) + 1
@@ -115,6 +132,10 @@ print "finished in" , str(time.time() - strt) , "sec"
 
 # cv.drawContours(im,contours,-1,(0,0,255))
 # cv.imshow('gray',gray)
+if debug:
+	cv.drawContours(im,contours,-1,(0,255,255))
+	cv.imshow('debug',im)
+	0xFF & cv.waitKey()
 
 cv.imshow('test',im)
 0xFF & cv.waitKey()#(10)
