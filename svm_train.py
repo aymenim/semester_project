@@ -97,12 +97,14 @@ def mosaic(w, imgs):
 def load_data():
     global plates , labels
     for i in os.listdir(PLATE_DIR):
+        if i[-3:] != "jpg": continue
         print "working on plate", i
         plates.append(cv.imread(PLATE_DIR + "\\"+i))
         labels.append(1)
         
 
     for i in os.listdir(NO_PLATE_DIR):
+        if i[-3:] != "jpg": continue
         print "working on Non plate", i
         plates.append(cv.imread(NO_PLATE_DIR + "\\"+i))
         labels.append(0)
@@ -130,7 +132,7 @@ def evaluate_model(model, digits, samples, labels):
         if not flag:
             img[...,:2] = 0
         vis.append(img)
-    return mosaic(4, vis)
+    return None #mosaic(4, vis)
 
 def main():
     global plates , labels
@@ -146,7 +148,7 @@ def main():
     samples = preprocess_hog(plates) # hog(plates)
 
     train_n = int(0.9*len(samples))
-    cv.imshow('test set', mosaic(4, plates))
+    # cv.imshow('test set', mosaic(4, plates))
 
     plates_train, plates_test = np.split(plates, [train_n])
     samples_train, samples_test = np.split(samples, [train_n])
@@ -156,7 +158,7 @@ def main():
     model = SVM(C=2.67, gamma=5.383)
     model.train(samples_train, labels_train)
     vis = evaluate_model(model, plates_test, samples_test, labels_test)
-    cv.imshow('SVM test', vis)
+    # cv.imshow('SVM test', vis)
     print 'saving SVM as "plates_svm.dat"...'
     model.save('plates_svm.dat')
     print 'saved SVM as "plates_svm.dat"'
