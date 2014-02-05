@@ -64,6 +64,7 @@ def feature(img):
 
 j = 0
 
+
 for i in os.listdir(PLATE_DIR):
 	print "working on plate", i
 	if i[-3:] != "jpg": continue

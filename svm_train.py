@@ -143,6 +143,7 @@ def main():
     rand = np.random.RandomState(321)
     shuffle = rand.permutation(len(plates))
     print "shuffle: ",type(shuffle) , str(shuffle)
+    print "plates", type(plates)
     plates, labels = plates[shuffle], labels[shuffle]
 
     samples = preprocess_hog(plates) # hog(plates)
@@ -153,6 +154,7 @@ def main():
     plates_train, plates_test = np.split(plates, [train_n])
     samples_train, samples_test = np.split(samples, [train_n])
     labels_train, labels_test = np.split(labels, [train_n])
+    print 'labels_train',type(labels_train[0])
 
     print 'training SVM...'
     model = SVM(C=2.67, gamma=5.383)
